@@ -19,6 +19,7 @@ const DOM = {
     modalCloseBtn: document.getElementById('modal-close-btn'),
     configContent: document.getElementById('config-content'),
     toolsContent: document.getElementById('tools-content'),
+    statsContent: document.getElementById('stats-content'),
 };
 
 function init() {
@@ -98,6 +99,8 @@ function switchTab(tabName) {
         loadConfig();
     } else if (tabName === 'tools') {
         loadTools();
+    } else if (tabName === 'stats') {
+        loadStats();
     }
 }
 
@@ -212,6 +215,59 @@ function renderTools(tools) {
     html += '</div>';
 
     DOM.toolsContent.innerHTML = html;
+}
+
+async function loadStats() {
+    try {
+        DOM.statsContent.innerHTML = '<div class="loading">Loading performance stats...</div>';
+        const response = await fetch(`${API_BASE}/stats`);
+        if (response.ok) {
+            const stats = await response.json();
+            renderStats(stats);
+        } else {
+            DOM.statsContent.innerHTML = '<div class="empty-state">Failed to load stats</div>';
+        }
+    } catch (error) {
+        DOM.statsContent.innerHTML = '<div class="empty-state">Failed to load stats</div>';
+        console.error('Failed to load stats:', error);
+    }
+}
+
+function renderStats(stats) {
+    let html = `
+        <div class="config-section">
+            <div class="config-section-title">Server Statistics</div>
+            <div class="config-item"><div class="config-label">Active Sessions</div><div class="config-value">${stats.sessions_count || 0}</div></div>
+            <div class="config-item"><div class="config-label">Uptime</div><div class="config-value">${formatSeconds(stats.uptime_seconds || 0)}</div></div>
+            <div class="config-item"><div class="config-label">Memory Usage</div><div class="config-value">${stats.memory_usage_kb || 0} KB</div></div>
+            <div class="config-item"><div class="config-label">LLM Provider</div><div class="config-value">${stats.llm_provider || 'N/A'}</div></div>
+        </div>
+        
+        <div class="config-section">
+            <div class="config-section-title">Performance Features</div>
+            <div class="config-item"><div class="config-label">Request Compression</div><div class="config-value">Enabled</div></div>
+            <div class="config-item"><div class="config-label">Request Timeout</div><div class="config-value">60 seconds</div></div>
+            <div class="config-item"><div class="config-label">Body Size Limit</div><div class="config-value">10 MB</div></div>
+            <div class="config-item"><div class="config-label">CORS Protection</div><div class="config-value">Enabled</div></div>
+        </div>
+    `;
+    
+    DOM.statsContent.innerHTML = html;
+}
+
+function formatSeconds(seconds) {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    let parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
+    
+    return parts.join(' ');
 }
 
 function connectWebSocket() {

@@ -18,8 +18,12 @@ use std::path::PathBuf;
 use tokio::sync::RwLock;
 use tower_http::{
     cors::{Any, CorsLayer},
+    compression::CompressionLayer,
+    timeout::TimeoutLayer,
+    limit::RequestBodyLimitLayer,
     services::ServeDir,
 };
+use std::time::Duration;
 use tracing::{error, info, warn};
 use uuid::Uuid;
 use hermes_core::agent::Agent;
@@ -233,6 +237,33 @@ async fn get_tools() -> Json<Vec<ToolResponse>> {
         },
     ];
     Json(tools)
+}
+
+#[derive(Serialize)]
+struct StatsResponse {
+    sessions_count: usize,
+    uptime_seconds: u64,
+    memory_usage_kb: u64,
+    llm_provider: String,
+}
+
+static START_TIME: once_cell::sync::Lazy<std::time::Instant> = once_cell::sync::Lazy::new(std::time::Instant::now);
+
+async fn get_stats(State(state): State<Arc<AppState>>) -> Json<StatsResponse> {
+    let sessions_count = state.agents.read().await.len();
+    let uptime_seconds = START_TIME.elapsed().as_secs();
+    
+    let config = state.config.clone();
+    let llm_provider = config.llm.provider;
+    
+    let memory_usage_kb = 0;
+
+    Json(StatsResponse {
+        sessions_count,
+        uptime_seconds,
+        memory_usage_kb,
+        llm_provider,
+    })
 }
 
 async fn create_session(
@@ -460,16 +491,24 @@ fn router(state: Arc<AppState>, static_dir: PathBuf) -> Router {
         .allow_methods(Any)
         .allow_headers(Any);
 
+    let timeout = TimeoutLayer::new(Duration::from_secs(60));
+    let body_limit = RequestBodyLimitLayer::new(1024 * 1024 * 10);
+    let compression = CompressionLayer::new();
+
     Router::new()
         .route("/health", get(health_check))
         .route("/config", get(get_config))
         .route("/tools", get(get_tools))
+        .route("/stats", get(get_stats))
         .route("/sessions", post(create_session))
         .route("/sessions", get(list_sessions))
         .route("/sessions/:session_id", delete(delete_session))
         .route("/sessions/:session_id/chat", post(chat))
         .route("/ws", get(websocket_handler))
         .nest_service("/", static_service)
+        .layer(compression)
+        .layer(timeout)
+        .layer(body_limit)
         .layer(cors)
         .with_state(state)
 }
