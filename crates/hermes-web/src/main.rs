@@ -33,7 +33,7 @@ struct Cli {
     #[arg(long, short = 'p', default_value = "3000")]
     port: u16,
 
-    #[arg(long, short = 'h', default_value = "127.0.0.1")]
+    #[arg(long, short = 'H', default_value = "127.0.0.1")]
     host: String,
 
     #[arg(long, short = 's', default_value = "./web")]
@@ -319,7 +319,14 @@ async fn main() -> Result<()> {
         .init();
 
     let cli = Cli::parse();
-    let config = Config::load(&cli.config).unwrap_or_else(|_| Config::default());
+    println!("Loading config from: {}", cli.config);
+    let config = Config::load(&cli.config).unwrap_or_else(|e| {
+        println!("Config load error: {}, using default", e);
+        Config::default()
+    });
+
+    println!("Loaded LLM provider: {}", config.llm.provider);
+    println!("Loaded LLM model: {}", config.llm.model);
 
     let addr = format!("{}:{}", cli.host, cli.port);
     let static_dir = PathBuf::from(&cli.static_dir);

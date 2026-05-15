@@ -140,14 +140,45 @@ impl LlmClient for MockLlmClient {
         if let Some(resp) = self.responses.first() {
             Ok(resp.clone())
         } else {
-            Err(Error::Llm("No mock response available".into()))
+            Ok(ChatResponse {
+                id: "mock-1".into(),
+                choices: vec![Choice {
+                    index: 0,
+                    message: Message {
+                        role: "assistant".into(),
+                        content: "Hello! This is a mock response. I'm Hermes, your AI assistant. How can I help you today?".into(),
+                        tool_calls: None,
+                    },
+                    finish_reason: "stop".into(),
+                }],
+                usage: Usage {
+                    prompt_tokens: 10,
+                    completion_tokens: 20,
+                    total_tokens: 30,
+                },
+            })
         }
     }
 }
 
 pub fn create_client(provider: &str, api_key: String, base_url: Option<String>, model: String) -> Box<dyn LlmClient> {
     match provider.to_lowercase().as_str() {
-        "openai" | "anthropic" => Box::new(OpenAIClient::new(api_key, base_url, model)),
-        _ => Box::new(OpenAIClient::new(api_key, base_url, model)),
+        "mock" => Box::new(MockLlmClient::new()),
+        "openai" | "anthropic" => {
+            let base_url = match base_url {
+                Some(url) if url.is_empty() => None,
+                Some(url) => Some(url),
+                None => None,
+            };
+            Box::new(OpenAIClient::new(api_key, base_url, model))
+        },
+        _ => {
+            let base_url = match base_url {
+                Some(url) if url.is_empty() => None,
+                Some(url) => Some(url),
+                None => None,
+            };
+            Box::new(OpenAIClient::new(api_key, base_url, model))
+        },
     }
 }
