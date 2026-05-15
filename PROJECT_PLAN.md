@@ -1,0 +1,184 @@
+
+# Hermes Agent 全栈 Rust 重构 + Web 界面 项目计划
+
+## 项目状态
+
+- **分支**: `feature/rust-rewrite-web-ui`
+- **开始日期**: 2026-05-15
+- **阶段**: 基础设施搭建完成，准备进入下一阶段
+- **编译状态**: ✅ 成功编译
+
+---
+
+## 项目路线图
+
+### Phase 1: 基础设施搭建 ✅ 完成
+
+- [x] 1.1 创建新分支 `feature/rust-rewrite-web-ui`
+- [x] 1.2 初始化 Cargo 工作空间
+- [x] 1.3 创建核心库 `hermes-core` 骨架
+- [x] 1.4 完成核心错误类型
+- [x] 1.5 完成配置管理
+- [x] 1.6 完成 LLM 抽象层
+- [x] 1.7 完成工具系统框架
+- [x] 1.8 创建基础项目文档
+- [x] 1.9 实现会话上下文和记忆存储
+- [x] 1.10 实现 Agent 核心引擎
+- [x] 1.11 创建 `hermes-tools` 工具库
+- [x] 1.12 创建 `hermes-cli` 和 `hermes-web` 应用
+- [x] 1.13 创建 Web 界面
+- [x] 1.14 创建配置文件和 README
+
+### Phase 2: 核心 Agent 引擎
+
+- [ ] 2.1 完善上下文管理
+- [ ] 2.2 实现提示词构建增强
+- [ ] 2.3 改进 Agent 核心循环
+- [ ] 2.4 完善工具调用处理
+- [ ] 2.5 实现记忆持久化
+- [ ] 2.6 完成技能系统基础
+
+### Phase 3: Web 后端 (Axum)
+
+- [x] 3.1 创建 Web 服务 `hermes-web` crate
+- [x] 3.2 实现 REST API
+- [ ] 3.3 实现 WebSocket 实时通信
+- [x] 3.4 实现会话管理
+- [ ] 3.5 实现静态文件服务
+
+### Phase 4: Web 前端
+
+- [x] 4.1 初始化前端项目 (原生 JS)
+- [x] 4.2 实现聊天界面
+- [ ] 4.3 实现工具输出显示
+- [ ] 4.4 实现配置界面
+- [ ] 4.5 实现技能管理界面
+
+### Phase 5: 工具生态
+
+- [x] 5.1 创建 `hermes-tools` crate
+- [x] 5.2 实现文件操作工具
+- [ ] 5.3 实现终端执行工具
+- [ ] 5.4 实现 Web 工具
+- [x] 5.5 实现工具注册机制
+
+### Phase 6: CLI
+
+- [x] 6.1 创建 `hermes-cli` crate
+- [x] 6.2 实现基础命令
+- [x] 6.3 实现交互式 CLI
+
+### Phase 7: 测试与优化
+
+- [ ] 7.1 单元测试
+- [ ] 7.2 集成测试
+- [ ] 7.3 性能优化
+- [ ] 7.4 安全审计
+
+---
+
+## 当前任务进度
+
+### 已完成: Phase 1 基础设施搭建 ✅
+
+- **任务 1.1-1.14 已完成** ✅
+- **编译状态**: ✅ 成功编译 (2026-05-15)
+
+---
+
+## 技术栈
+
+### Rust
+
+- **异步运行时**: tokio
+- **Web 框架**: axum
+- **序列化**: serde + serde_json
+- **错误处理**: thiserror + anyhow
+- **配置**: config-rs
+- **日志**: tracing
+- **CLI**: clap
+
+### 前端
+
+- 框架: 原生 JS
+- UI: 原生 CSS (深色主题)
+- 通信: fetch API
+
+---
+
+## 项目结构
+
+```
+/workspace/
+├── Cargo.toml                      # 工作空间配置
+├── PROJECT_PLAN.md                 # 本文档
+├── config.toml                     # 默认配置
+├── README_RUST.md                  # 项目文档
+├── .gitignore                      # Git 忽略文件
+├── crates/
+│   ├── hermes-core/               # 核心库
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── agent.rs          # Agent 引擎 ✅
+│   │       ├── config.rs         # 配置管理 ✅
+│   │       ├── context.rs        # 上下文管理 ✅
+│   │       ├── error.rs          # 错误类型 ✅
+│   │       ├── llm.rs            # LLM 抽象 ✅
+│   │       ├── memory.rs         # 记忆管理 ✅
+│   │       ├── prompt.rs         # 提示词构建 ✅
+│   │       ├── skill.rs          # 技能系统 ✅
+│   │       └── tool.rs           # 工具系统 ✅
+│   ├── hermes-tools/             # 工具库
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       └── file_tools.rs     # 文件工具 ✅
+│   ├── hermes-cli/               # CLI
+│   │   ├── Cargo.toml
+│   │   └── src/main.rs
+│   └── hermes-web/               # Web 服务器
+│       ├── Cargo.toml
+│       └── src/main.rs
+└── web/                           # Web 前端
+    ├── index.html                # 主界面 ✅
+    └── app.js                    # 前端逻辑 ✅
+```
+
+---
+
+## 快速开始
+
+### 编译项目
+
+```bash
+cargo check
+```
+
+### 运行 CLI
+
+```bash
+# 交互式模式
+cargo run --bin hermes -- interactive
+
+# 单次运行
+cargo run --bin hermes -- run "Hello, world!"
+```
+
+### 运行 Web 服务器
+
+```bash
+cargo run --bin hermes-web
+```
+
+然后在浏览器中打开 `web/index.html`。
+
+---
+
+## 最近更新
+
+- **2026-05-15**: 开始项目，创建分支，初始化核心库
+- **2026-05-15**: 完成工具系统、Agent 引擎、上下文管理
+- **2026-05-15**: 创建 hermes-tools、hermes-cli、hermes-web
+- **2026-05-15**: 添加 Web UI 和完整的项目文档
+- **2026-05-15**: 修复编译错误，项目成功编译 ✅

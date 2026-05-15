@@ -26,6 +26,12 @@ pub enum Error {
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
     
+    #[error("TOML error: {0}")]
+    Toml(#[from] toml::de::Error),
+    
+    #[error("TOML serialization error: {0}")]
+    TomlSer(#[from] toml::ser::Error),
+    
     #[error("Agent state error: {0}")]
     State(String),
     

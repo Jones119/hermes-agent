@@ -1,184 +1,88 @@
 
-use crate::llm
-use crate::llm::Message;
-use serde::{Deserialize,
-use crate::llm::Message;
-use serde::{Deserialize, Serialize};
-use std::collections::
-use crate::llm::Message;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub
 use crate::llm::Message;
-use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContextManager {
-    messages: VecDe
-use crate::llm::Message;
-use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContextManager {
+pub struct ConversationContext {
     messages: VecDeque<Message>,
-    max_size: usize,
+    max_messages: usize,
 }
 
-impl ContextManager {
-    pub
-use crate::llm::Message;
-use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContextManager {
-    messages: VecDeque<Message>,
-    max_size: usize,
-}
-
-impl ContextManager {
-    pub fn new(max_size: usize) -> Self {
-        ContextManager {
-            messages: Vec
-use crate::llm::Message;
-use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContextManager {
-    messages: VecDeque<Message>,
-    max_size: usize,
-}
-
-impl ContextManager {
-    pub fn new(max_size: usize) -> Self {
-        ContextManager {
-            messages: VecDeque::with_capacity(max_size),
-
-use crate::llm::Message;
-use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContextManager {
-    messages: VecDeque<Message>,
-    max_size: usize,
-}
-
-impl ContextManager {
-    pub fn new(max_size: usize) -> Self {
-        ContextManager {
-            messages: VecDeque::with_capacity(max_size),
-            max_size,
-        }
-    }
-    
-    pub fn add_message(&mut self,
-use crate::llm::Message;
-use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContextManager {
-    messages: VecDeque<Message>,
-    max_size: usize,
-}
-
-impl ContextManager {
-    pub fn new(max_size: usize) -> Self {
-        ContextManager {
-            messages: VecDeque::with_capacity(max_size),
-            max_size,
+impl ConversationContext {
+    pub fn new(max_messages: usize) -> Self {
+        ConversationContext {
+            messages: VecDeque::with_capacity(max_messages),
+            max_messages,
         }
     }
     
     pub fn add_message(&mut self, message: Message) {
-        self.messages.push_back(message);
-        if self.messages.len()
-use crate::llm::Message;
-use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContextManager {
-    messages: VecDeque<Message>,
-    max_size: usize,
-}
-
-impl ContextManager {
-    pub fn new(max_size: usize) -> Self {
-        ContextManager {
-            messages: VecDeque::with_capacity(max_size),
-            max_size,
-        }
-    }
-    
-    pub fn add_message(&mut self, message: Message) {
-        self.messages.push_back(message);
-        if self.messages.len() > self.max_size {
+        if self.messages.len() >= self.max_messages {
             self.messages.pop_front();
         }
+        self.messages.push_back(message);
     }
     
-    pub fn add_user_message(&mut self,
-use crate::llm::Message;
-use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContextManager {
-    messages: VecDeque<Message>,
-    max_size: usize,
+    pub fn get_messages(&self) -> Vec<Message> {
+        self.messages.iter().cloned().collect()
+    }
+    
+    pub fn clear(&mut self) {
+        self.messages.clear();
+    }
+    
+    pub fn len(&self) -> usize {
+        self.messages.len()
+    }
+    
+    pub fn is_empty(&self) -> bool {
+        self.messages.is_empty()
+    }
 }
 
-impl ContextManager {
-    pub fn new(max_size: usize) -> Self {
-        ContextManager {
-            messages: VecDeque::with_capacity(max_size),
-            max_size,
-        }
+impl Default for ConversationContext {
+    fn default() -> Self {
+        Self::new(50)
     }
-    
-    pub fn add_message(&mut self, message: Message) {
-        self.messages.push_back(message);
-        if self.messages.len() > self.max_size {
-            self.messages.pop_front();
-        }
-    }
-    
-    pub fn add_user_message(&mut self, content: String) {
-        self.add_message(
-use crate::llm::Message;
-use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContextManager {
-    messages: VecDeque<Message>,
-    max_size: usize,
 }
 
-impl ContextManager {
-    pub fn new(max_size: usize) -> Self {
-        ContextManager {
-            messages: VecDeque::with_capacity(max_size),
-            max_size,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentContext {
+    pub conversation: ConversationContext,
+    pub system_prompt: Option<String>,
+    pub user_id: Option<String>,
+    pub session_id: Option<String>,
+}
+
+impl AgentContext {
+    pub fn new() -> Self {
+        AgentContext {
+            conversation: ConversationContext::default(),
+            system_prompt: None,
+            user_id: None,
+            session_id: None,
         }
     }
     
-    pub fn add_message(&mut self, message: Message) {
-        self.messages.push_back(message);
-        if self.messages.len() > self.max_size {
-            self.messages.pop_front();
-        }
+    pub fn with_system_prompt(mut self, prompt: String) -> Self {
+        self.system_prompt = Some(prompt);
+        self
     }
     
-    pub fn add_user_message(&mut self, content: String) {
-        self.add_message(Message {
-            role: "user".into(),
-            content,
-            tool_calls
+    pub fn with_user_id(mut self, user_id: String) -> Self {
+        self.user_id = Some(user_id);
+        self
+    }
+    
+    pub fn with_session_id(mut self, session_id: String) -> Self {
+        self.session_id = Some(session_id);
+        self
+    }
+}
+
+impl Default for AgentContext {
+    fn default() -> Self {
+        Self::new()
+    }
+}
