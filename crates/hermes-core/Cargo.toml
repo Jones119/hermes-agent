@@ -1,3 +1,4 @@
+
 [package]
 name = "hermes-core"
 version.workspace = true
@@ -8,7 +9,7 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 thiserror.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["full"] }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -19,3 +20,10 @@ toml.workspace = true
 once_cell.workspace = true
 uuid.workspace = true
 reqwest.workspace = true
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[[test]]
+name = "unit_tests"
+path = "tests/unit_tests.rs"

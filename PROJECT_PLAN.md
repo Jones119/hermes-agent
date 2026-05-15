@@ -5,7 +5,7 @@
 
 - **分支**: `feature/rust-rewrite-web-ui`
 - **开始日期**: 2026-05-15
-- **阶段**: 基础设施搭建完成，准备进入下一阶段
+- **阶段**: Phase 1-5 完成，准备测试与优化
 - **编译状态**: ✅ 成功编译
 
 ---
@@ -29,48 +29,50 @@
 - [x] 1.13 创建 Web 界面
 - [x] 1.14 创建配置文件和 README
 
-### Phase 2: 核心 Agent 引擎
+### Phase 2: 核心 Agent 引擎 ✅ 基础完成
 
-- [ ] 2.1 完善上下文管理
-- [ ] 2.2 实现提示词构建增强
-- [ ] 2.3 改进 Agent 核心循环
-- [ ] 2.4 完善工具调用处理
-- [ ] 2.5 实现记忆持久化
-- [ ] 2.6 完成技能系统基础
+- [x] 2.1 完善上下文管理
+- [x] 2.2 实现提示词构建
+- [x] 2.3 Agent 核心循环基础实现
+- [x] 2.4 工具调用处理
+- [x] 2.5 记忆管理基础实现
+- [x] 2.6 技能系统基础实现
 
-### Phase 3: Web 后端 (Axum)
+### Phase 3: Web 后端 (Axum) ✅ 完成
 
 - [x] 3.1 创建 Web 服务 `hermes-web` crate
 - [x] 3.2 实现 REST API
-- [ ] 3.3 实现 WebSocket 实时通信
+- [x] 3.3 实现 WebSocket 实时通信
 - [x] 3.4 实现会话管理
-- [ ] 3.5 实现静态文件服务
+- [x] 3.5 实现静态文件服务
 
-### Phase 4: Web 前端
+### Phase 4: Web 前端 ✅ 基础完成
 
 - [x] 4.1 初始化前端项目 (原生 JS)
 - [x] 4.2 实现聊天界面
-- [ ] 4.3 实现工具输出显示
-- [ ] 4.4 实现配置界面
-- [ ] 4.5 实现技能管理界面
+- [x] 4.3 WebSocket 集成
+- [x] 4.4 连接状态显示
+- [x] 4.5 打字指示器动画
+- [ ] 4.6 实现配置界面
+- [ ] 4.7 实现技能管理界面
 
-### Phase 5: 工具生态
+### Phase 5: 工具生态 ✅ 核心完成
 
 - [x] 5.1 创建 `hermes-tools` crate
 - [x] 5.2 实现文件操作工具
-- [ ] 5.3 实现终端执行工具
-- [ ] 5.4 实现 Web 工具
+- [x] 5.3 实现终端执行工具
+- [x] 5.4 实现 Web 工具
 - [x] 5.5 实现工具注册机制
 
-### Phase 6: CLI
+### Phase 6: CLI ✅ 完成
 
 - [x] 6.1 创建 `hermes-cli` crate
 - [x] 6.2 实现基础命令
 - [x] 6.3 实现交互式 CLI
 
-### Phase 7: 测试与优化
+### Phase 7: 测试与优化 🔄 进行中
 
-- [ ] 7.1 单元测试
+- [x] 7.1 单元测试框架
 - [ ] 7.2 集成测试
 - [ ] 7.3 性能优化
 - [ ] 7.4 安全审计
@@ -79,10 +81,15 @@
 
 ## 当前任务进度
 
-### 已完成: Phase 1 基础设施搭建 ✅
+### 已完成: Phase 1-5 ✅
 
-- **任务 1.1-1.14 已完成** ✅
-- **编译状态**: ✅ 成功编译 (2026-05-15)
+- **Phase 1**: 基础设施搭建 ✅
+- **Phase 2**: 核心 Agent 引擎基础 ✅
+- **Phase 3**: Web 后端 ✅
+- **Phase 4**: Web 前端基础 ✅
+- **Phase 5**: 工具生态核心 ✅
+- **Phase 6**: CLI ✅
+- **Phase 7**: 测试与优化 🔄 进行中
 
 ---
 
@@ -97,12 +104,13 @@
 - **配置**: config-rs
 - **日志**: tracing
 - **CLI**: clap
+- **WebSocket**: axum ws + futures-util
 
 ### 前端
 
-- 框架: 原生 JS
+- 框架: 原生 JavaScript
 - UI: 原生 CSS (深色主题)
-- 通信: fetch API
+- 通信: fetch API + WebSocket
 
 ---
 
@@ -114,26 +122,32 @@
 ├── PROJECT_PLAN.md                 # 本文档
 ├── config.toml                     # 默认配置
 ├── README_RUST.md                  # 项目文档
-├── .gitignore                      # Git 忽略文件
+├── .gitignore
 ├── crates/
 │   ├── hermes-core/               # 核心库
 │   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── agent.rs          # Agent 引擎 ✅
-│   │       ├── config.rs         # 配置管理 ✅
-│   │       ├── context.rs        # 上下文管理 ✅
-│   │       ├── error.rs          # 错误类型 ✅
-│   │       ├── llm.rs            # LLM 抽象 ✅
-│   │       ├── memory.rs         # 记忆管理 ✅
-│   │       ├── prompt.rs         # 提示词构建 ✅
-│   │       ├── skill.rs          # 技能系统 ✅
-│   │       └── tool.rs           # 工具系统 ✅
+│   │   ├── src/
+│   │   │   ├── lib.rs
+│   │   │   ├── agent.rs          # Agent 引擎 ✅
+│   │   │   ├── config.rs         # 配置管理 ✅
+│   │   │   ├── context.rs        # 上下文管理 ✅
+│   │   │   ├── error.rs          # 错误类型 ✅
+│   │   │   ├── llm.rs            # LLM 抽象 ✅
+│   │   │   ├── memory.rs         # 记忆管理 ✅
+│   │   │   ├── prompt.rs         # 提示词构建 ✅
+│   │   │   ├── skill.rs          # 技能系统 ✅
+│   │   │   └── tool.rs           # 工具系统 ✅
+│   │   └── tests/
+│   │       └── unit_tests.rs     # 单元测试 ✅
 │   ├── hermes-tools/             # 工具库
 │   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── lib.rs
-│   │       └── file_tools.rs     # 文件工具 ✅
+│   │   ├── src/
+│   │   │   ├── lib.rs
+│   │   │   ├── file_tools.rs     # 文件工具 ✅
+│   │   │   ├── terminal.rs       # 终端工具 ✅
+│   │   │   └── web_tools.rs      # Web 工具 ✅
+│   │   └── tests/
+│   │       └── unit_tests.rs     # 单元测试 ✅
 │   ├── hermes-cli/               # CLI
 │   │   ├── Cargo.toml
 │   │   └── src/main.rs
@@ -155,6 +169,12 @@
 cargo check
 ```
 
+### 运行测试
+
+```bash
+cargo test
+```
+
 ### 运行 CLI
 
 ```bash
@@ -171,7 +191,113 @@ cargo run --bin hermes -- run "Hello, world!"
 cargo run --bin hermes-web
 ```
 
-然后在浏览器中打开 `web/index.html`。
+然后在浏览器中打开 `http://127.0.0.1:3000`。
+
+### 自定义配置
+
+```bash
+cargo run --bin hermes-web -- -c config.toml -p 8080 -h 0.0.0.0 -s ./web
+```
+
+参数说明：
+- `-c, --config`: 配置文件路径 (默认: config.toml)
+- `-p, --port`: 服务器端口 (默认: 3000)
+- `-h, --host`: 服务器地址 (默认: 127.0.0.1)
+- `-s, --static-dir`: 静态文件目录 (默认: ./web)
+
+---
+
+## API 文档
+
+### REST API
+
+#### 创建会话
+```http
+POST /sessions
+Content-Type: application/json
+
+{"user_id": "optional_user_id"}
+```
+
+响应：
+```json
+{"session_id": "uuid"}
+```
+
+#### 发送消息
+```http
+POST /sessions/:session_id/chat
+Content-Type: application/json
+
+{"input": "Hello!"}
+```
+
+响应：
+```json
+{"output": "Hello! How can I help you?"}
+```
+
+#### 列出所有会话
+```http
+GET /sessions
+```
+
+响应：
+```json
+["session_id_1", "session_id_2", ...]
+```
+
+#### 删除会话
+```http
+DELETE /sessions/:session_id
+```
+
+#### 健康检查
+```http
+GET /health
+```
+
+响应：`ok`
+
+### WebSocket API
+
+连接地址：`ws://localhost:3000/ws`
+
+#### 消息格式
+```json
+{
+  "msg_type": "create_session|chat",
+  "content": "消息内容",
+  "session_id": "可选的会话ID"
+}
+```
+
+#### 服务器消息类型
+- `session_created`: 会话创建成功
+- `thinking`: 处理中
+- `response`: 响应消息
+- `error`: 错误消息
+
+---
+
+## 已实现的工具
+
+### 文件工具
+
+- `read_file`: 读取文件内容
+- `write_file`: 写入文件内容
+
+### 终端工具
+
+- `terminal`: 执行 shell 命令
+- `grep`: 搜索文件内容
+- `list_dir`: 列出目录内容
+
+### Web 工具
+
+- `http_get`: HTTP GET 请求
+- `http_post`: HTTP POST 请求
+- `web_search`: 网页搜索
 
 ---
 
@@ -182,3 +308,29 @@ cargo run --bin hermes-web
 - **2026-05-15**: 创建 hermes-tools、hermes-cli、hermes-web
 - **2026-05-15**: 添加 Web UI 和完整的项目文档
 - **2026-05-15**: 修复编译错误，项目成功编译 ✅
+- **2026-05-15**: 实现终端执行工具 (Terminal, Grep, ListDir) ✅
+- **2026-05-15**: 实现 Web 工具 (HTTP GET/POST, Web Search) ✅
+- **2026-05-15**: 实现 WebSocket 实时通信 ✅
+- **2026-05-15**: 添加静态文件服务 ✅
+- **2026-05-15**: 增强 Web 前端界面 (打字指示器、连接状态) ✅
+- **2026-05-15**: 添加单元测试框架 ✅
+
+---
+
+## 下一步计划
+
+### Phase 7: 测试与优化
+
+1. 完善单元测试覆盖率
+2. 添加集成测试
+3. 性能基准测试
+4. 内存优化
+5. 安全审计和加固
+
+### Phase 8: 功能增强
+
+1. 实现配置管理界面
+2. 实现技能管理界面
+3. 添加用户认证
+4. 实现会话持久化
+5. 添加多语言支持

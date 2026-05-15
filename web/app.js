@@ -1,68 +1,150 @@
 
 let currentSessionId = null;
 let messages = [];
+let ws = null;
+let wsConnected = false;
 
-const API_BASE = '';
+const API_BASE = window.location.origin;
 
-// DOM elements
-const chatContainer = document.getElementById('chat-container');
-const welcomeScreen = document.getElementById('welcome-screen');
-const chatInput = document.getElementById('chat-input');
-const sendBtn = document.getElementById('send-btn');
-const newChatBtn = document.getElementById('new-chat-btn');
-const sessionsList = document.getElementById('sessions-list');
+const DOM = {
+    chatContainer: document.getElementById('chat-container'),
+    welcomeScreen: document.getElementById('welcome-screen'),
+    chatInput: document.getElementById('chat-input'),
+    sendBtn: document.getElementById('send-btn'),
+    newChatBtn: document.getElementById('new-chat-btn'),
+    sessionsList: document.getElementById('sessions-list'),
+    connectionStatus: document.getElementById('connection-status'),
+};
 
-// Initialize
-async function init() {
-    await loadSessions();
+function init() {
     setupEventListeners();
+    connectWebSocket();
+    loadSessions();
+}
+
+function updateConnectionStatus(connected) {
+    if (connected) {
+        DOM.connectionStatus.textContent = 'Connected';
+        DOM.connectionStatus.className = 'connection-status connected';
+    } else {
+        DOM.connectionStatus.textContent = 'Disconnected';
+        DOM.connectionStatus.className = 'connection-status disconnected';
+    }
 }
 
 function setupEventListeners() {
-    newChatBtn.addEventListener('click', createNewSession);
-    sendBtn.addEventListener('click', sendMessage);
-    
-    chatInput.addEventListener('keydown', (e) => {
+    DOM.newChatBtn.addEventListener('click', createNewSession);
+    DOM.sendBtn.addEventListener('click', sendMessage);
+
+    DOM.chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
         }
     });
-    
+
     document.querySelectorAll('.quick-action').forEach(btn => {
         btn.addEventListener('click', () => {
             const prompt = btn.dataset.prompt;
-            createNewSession().then(() => {
-                chatInput.value = prompt;
+            if (!currentSessionId) {
+                createNewSession().then(() => {
+                    DOM.chatInput.value = prompt;
+                    sendMessage();
+                });
+            } else {
+                DOM.chatInput.value = prompt;
                 sendMessage();
-            });
+            }
         });
     });
-    
-    chatInput.addEventListener('input', () => {
-        chatInput.style.height = 'auto';
-        chatInput.style.height = chatInput.scrollHeight + 'px';
+
+    DOM.chatInput.addEventListener('input', () => {
+        DOM.chatInput.style.height = 'auto';
+        DOM.chatInput.style.height = DOM.chatInput.scrollHeight + 'px';
     });
 }
 
-async function createNewSession() {
-    try {
-        const response = await fetch(`${API_BASE}/sessions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            currentSessionId = data.session_id;
-            messages = [];
-            renderMessages();
-            await loadSessions();
-            welcomeScreen.style.display = 'none';
+function connectWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+        console.log('WebSocket connected');
+        wsConnected = true;
+        updateConnectionStatus(true);
+    };
+
+    ws.onmessage = (event) => {
+        try {
+            const msg = JSON.parse(event.data);
+            handleWsMessage(msg);
+        } catch (e) {
+            console.error('Failed to parse WebSocket message:', e);
         }
-    } catch (error) {
-        console.error('Failed to create session:', error);
+    };
+
+    ws.onclose = () => {
+        console.log('WebSocket disconnected');
+        wsConnected = false;
+        updateConnectionStatus(false);
+        setTimeout(connectWebSocket, 3000);
+    };
+
+    ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        updateConnectionStatus(false);
+    };
+}
+
+function handleWsMessage(msg) {
+    switch (msg.msg_type) {
+        case 'session_created':
+            currentSessionId = msg.content;
+            DOM.welcomeScreen.style.display = 'none';
+            break;
+
+        case 'thinking':
+            showTypingIndicator();
+            break;
+
+        case 'response':
+            removeTypingIndicator();
+            messages.push({ role: 'assistant', content: msg.content });
+            renderMessages();
+            break;
+
+        case 'error':
+            removeTypingIndicator();
+            messages.push({ role: 'assistant', content: `Error: ${msg.content}` });
+            renderMessages();
+            break;
+
+        default:
+            console.log('Unknown message type:', msg.msg_type);
     }
+}
+
+async function createNewSession() {
+    if (!wsConnected) {
+        console.error('WebSocket not connected');
+        return;
+    }
+
+    ws.send(JSON.stringify({ msg_type: 'create_session', content: '' }));
+
+    await new Promise(resolve => {
+        const check = setInterval(() => {
+            if (currentSessionId) {
+                clearInterval(check);
+                resolve();
+            }
+        }, 100);
+    });
+
+    messages = [];
+    await loadSessions();
 }
 
 async function loadSessions() {
@@ -78,85 +160,109 @@ async function loadSessions() {
 }
 
 function renderSessions(sessions) {
-    sessionsList.innerHTML = '';
+    DOM.sessionsList.innerHTML = '';
+
+    if (sessions.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'session-empty';
+        empty.textContent = 'No sessions';
+        empty.style.cssText = 'padding: 12px; color: #94a3b8; font-size: 13px;';
+        DOM.sessionsList.appendChild(empty);
+        return;
+    }
+
     sessions.forEach(sessionId => {
         const item = document.createElement('div');
         item.className = `session-item ${sessionId === currentSessionId ? 'active' : ''}`;
         item.textContent = sessionId.substring(0, 8) + '...';
         item.addEventListener('click', () => {
             currentSessionId = sessionId;
+            messages = [];
+            DOM.welcomeScreen.style.display = 'none';
             renderSessions(sessions);
         });
-        sessionsList.appendChild(item);
+        DOM.sessionsList.appendChild(item);
     });
 }
 
 async function sendMessage() {
-    const input = chatInput.value.trim();
-    if (!input || !currentSessionId) {
-        if (!currentSessionId) {
-            await createNewSession();
-        }
-        if (!input) return;
+    const input = DOM.chatInput.value.trim();
+    if (!input) return;
+
+    if (!currentSessionId) {
+        await createNewSession();
     }
-    
-    chatInput.value = '';
-    chatInput.style.height = 'auto';
-    sendBtn.disabled = true;
-    
-    // Add user message
+
+    DOM.chatInput.value = '';
+    DOM.chatInput.style.height = 'auto';
+    DOM.sendBtn.disabled = true;
+
     messages.push({ role: 'user', content: input });
     renderMessages();
-    
-    try {
-        const response = await fetch(`${API_BASE}/sessions/${currentSessionId}/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input }),
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            messages.push({ role: 'assistant', content: data.output });
-        } else {
-            const error = await response.json();
-            messages.push({ role: 'assistant', content: `Error: ${error.error}` });
-        }
-    } catch (error) {
-        messages.push({ role: 'assistant', content: `Error: ${error.message}` });
+
+    if (wsConnected && ws) {
+        ws.send(JSON.stringify({
+            msg_type: 'chat',
+            content: input
+        }));
     }
-    
-    sendBtn.disabled = false;
-    renderMessages();
 }
 
 function renderMessages() {
     if (messages.length === 0) {
-        welcomeScreen.style.display = 'block';
+        DOM.welcomeScreen.style.display = 'block';
         return;
     }
-    
-    welcomeScreen.style.display = 'none';
-    
-    const existingMessages = chatContainer.querySelectorAll('.message');
+
+    DOM.welcomeScreen.style.display = 'none';
+
+    const existingMessages = DOM.chatContainer.querySelectorAll('.message');
     existingMessages.forEach(el => el.remove());
-    
+
     messages.forEach(msg => {
         const messageEl = document.createElement('div');
         messageEl.className = `message ${msg.role}`;
-        
+
+        const avatar = msg.role === 'user' ? 'U' : 'A';
+        const name = msg.role === 'user' ? 'You' : 'Hermes';
+
         messageEl.innerHTML = `
             <div class="message-header">
-                <div class="message-avatar">${msg.role === 'user' ? 'U' : 'A'}</div>
-                <div class="message-role">${msg.role === 'user' ? 'You' : 'Hermes'}</div>
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-role">${name}</div>
             </div>
             <div class="message-content">${escapeHtml(msg.content)}</div>
         `;
-        
-        chatContainer.appendChild(messageEl);
+
+        DOM.chatContainer.appendChild(messageEl);
     });
-    
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
+    DOM.sendBtn.disabled = false;
+}
+
+function showTypingIndicator() {
+    const typing = document.createElement('div');
+    typing.className = 'message assistant typing';
+    typing.id = 'typing-indicator';
+    typing.innerHTML = `
+        <div class="message-header">
+            <div class="message-avatar">A</div>
+            <div class="message-role">Hermes</div>
+        </div>
+        <div class="message-content">
+            <span class="typing-dots">Thinking<span>.</span><span>.</span><span>.</span></span>
+        </div>
+    `;
+    DOM.chatContainer.appendChild(typing);
+    DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
 }
 
 function escapeHtml(text) {
@@ -165,7 +271,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Health check on load
 async function healthCheck() {
     try {
         const response = await fetch(`${API_BASE}/health`);
