@@ -1,0 +1,32 @@
+
+# Hermes Agent Configuration
+
+[llm]
+provider = "mock"
+model = "gpt-4o"
+api_key = ""
+base_url = ""
+temperature = 0.7
+max_tokens = 4096
+
+[agent]
+max_iterations = 20
+max_tool_calls = 50
+timeout_secs = 600
+memory_limit = 100
+
+[web]
+host = "127.0.0.1"
+port = 3000
+enable_cors = true
+static_dir = "./web/dist"
+
+[skill]
+auto_create = true
+skill_dir = "./skills"
+review_interval_hours = 168
+
+[security]
+enable_approval = true
+command_whitelist = ["ls", "cd", "pwd", "cat", "echo"]
+path_whitelist = ["/workspace"]

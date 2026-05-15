@@ -1,0 +1,34 @@
+
+[package]
+name = "hermes-web"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+hermes-core = { path = "../hermes-core" }
+anyhow.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["full"] }
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["json"] }
+axum = { workspace = true, features = ["ws"] }
+tower-http.workspace = true
+uuid = { workspace = true, features = ["serde", "v4"] }
+once_cell.workspace = true
+config.workspace = true
+toml.workspace = true
+reqwest.workspace = true
+futures-util = "0.3"
+
+[dependencies.clap]
+workspace = true
+features = ["derive"]
+
+[[bin]]
+name = "hermes-web"
+path = "src/main.rs"
