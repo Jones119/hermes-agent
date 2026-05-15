@@ -99,10 +99,12 @@ function connectWebSocket() {
 }
 
 function handleWsMessage(msg) {
+    console.log('Received message:', msg);
     switch (msg.msg_type) {
         case 'session_created':
             currentSessionId = msg.content;
             DOM.welcomeScreen.style.display = 'none';
+            loadSessions();
             break;
 
         case 'thinking':
@@ -129,12 +131,11 @@ function handleWsMessage(msg) {
 async function createNewSession() {
     if (!wsConnected) {
         console.error('WebSocket not connected');
+        alert('WebSocket connection not available. Please wait...');
         return;
     }
 
-    ws.send(JSON.stringify({ msg_type: 'create_session', content: '' }));
-
-    await new Promise(resolve => {
+    const promise = new Promise((resolve) => {
         const check = setInterval(() => {
             if (currentSessionId) {
                 clearInterval(check);
@@ -143,8 +144,10 @@ async function createNewSession() {
         }, 100);
     });
 
+    ws.send(JSON.stringify({ msg_type: 'create_session', content: '' }));
     messages = [];
-    await loadSessions();
+    
+    return promise;
 }
 
 async function loadSessions() {
@@ -205,6 +208,9 @@ async function sendMessage() {
             msg_type: 'chat',
             content: input
         }));
+    } else {
+        alert('WebSocket connection not available');
+        DOM.sendBtn.disabled = false;
     }
 }
 
