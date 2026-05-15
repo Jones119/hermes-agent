@@ -16,7 +16,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::path::PathBuf;
 use tokio::sync::RwLock;
-use tower_http::services::ServeDir;
+use tower_http::{
+    cors::{Any, CorsLayer},
+    services::ServeDir,
+};
 use tracing::{error, info, warn};
 use uuid::Uuid;
 use hermes_core::agent::Agent;
@@ -24,6 +27,7 @@ use hermes_core::config::Config;
 use hermes_core::context::AgentContext;
 use hermes_core::error::Error as HermesError;
 use hermes_core::llm::create_client;
+
 
 #[derive(Parser)]
 struct Cli {
@@ -86,6 +90,151 @@ async fn health_check() -> &'static str {
     "ok"
 }
 
+async fn get_config(State(state): State<Arc<AppState>>) -> Json<Config> {
+    Json(state.config.clone())
+}
+
+#[derive(Serialize)]
+struct ToolResponse {
+    name: String,
+    description: String,
+    parameters: Vec<ToolParameterResponse>,
+}
+
+#[derive(Serialize)]
+struct ToolParameterResponse {
+    name: String,
+    description: String,
+}
+
+fn sanitize_input(input: &str) -> Result<String, (StatusCode, String)> {
+    let dangerous_patterns = [
+        ";", "&&", "||", "`", "$(", "(", ")", "{", "}", "[", "]",
+        "<", ">", "|", "\\", "/", "..", "\0"
+    ];
+
+    for pattern in dangerous_patterns.iter() {
+        if input.contains(pattern) {
+            return Err((StatusCode::BAD_REQUEST, "Input contains dangerous characters".into()));
+        }
+    }
+
+    Ok(input.to_string())
+}
+
+fn validate_path(path: &str) -> Result<String, (StatusCode, String)> {
+    if path.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "Path cannot be empty".into()));
+    }
+
+    if path.contains("..") {
+        return Err((StatusCode::BAD_REQUEST, "Path traversal not allowed".into()));
+    }
+
+    if path.starts_with("/") || path.starts_with("\\") {
+        return Err((StatusCode::BAD_REQUEST, "Absolute paths not allowed".into()));
+    }
+
+    Ok(path.to_string())
+}
+
+fn is_command_allowed(command: &str, config: &Config) -> bool {
+    if config.security.command_whitelist.is_empty() {
+        return true;
+    }
+
+    let cmd = command.split_whitespace().next().unwrap_or("");
+    config.security.command_whitelist.contains(&cmd.to_string())
+}
+
+async fn get_tools() -> Json<Vec<ToolResponse>> {
+    let tools = vec![
+        ToolResponse {
+            name: "read_file".to_string(),
+            description: "Read the contents of a file".to_string(),
+            parameters: vec![
+                ToolParameterResponse {
+                    name: "path".to_string(),
+                    description: "The path to the file".to_string(),
+                },
+            ],
+        },
+        ToolResponse {
+            name: "write_file".to_string(),
+            description: "Write content to a file".to_string(),
+            parameters: vec![
+                ToolParameterResponse {
+                    name: "path".to_string(),
+                    description: "The path to the file".to_string(),
+                },
+                ToolParameterResponse {
+                    name: "content".to_string(),
+                    description: "The content to write".to_string(),
+                },
+            ],
+        },
+        ToolResponse {
+            name: "terminal".to_string(),
+            description: "Execute a shell command".to_string(),
+            parameters: vec![
+                ToolParameterResponse {
+                    name: "command".to_string(),
+                    description: "The command to execute".to_string(),
+                },
+            ],
+        },
+        ToolResponse {
+            name: "grep".to_string(),
+            description: "Search for text in files".to_string(),
+            parameters: vec![
+                ToolParameterResponse {
+                    name: "pattern".to_string(),
+                    description: "The search pattern".to_string(),
+                },
+                ToolParameterResponse {
+                    name: "path".to_string(),
+                    description: "The path to search".to_string(),
+                },
+            ],
+        },
+        ToolResponse {
+            name: "list_dir".to_string(),
+            description: "List directory contents".to_string(),
+            parameters: vec![
+                ToolParameterResponse {
+                    name: "path".to_string(),
+                    description: "The directory path".to_string(),
+                },
+            ],
+        },
+        ToolResponse {
+            name: "http_get".to_string(),
+            description: "Make an HTTP GET request".to_string(),
+            parameters: vec![
+                ToolParameterResponse {
+                    name: "url".to_string(),
+                    description: "The URL to fetch".to_string(),
+                },
+            ],
+        },
+        ToolResponse {
+            name: "http_post".to_string(),
+            description: "Make an HTTP POST request".to_string(),
+            parameters: vec![
+                ToolParameterResponse {
+                    name: "url".to_string(),
+                    description: "The URL to post to".to_string(),
+                },
+                ToolParameterResponse {
+                    name: "body".to_string(),
+                    description: "The request body".to_string(),
+                },
+            ],
+        },
+    ];
+    Json(tools)
+}
+
 async fn create_session(
     State(state): State<Arc<AppState>>,
     Json(req): Json<CreateSessionRequest>,
@@ -123,6 +272,12 @@ async fn chat(
     Path(session_id): Path<String>,
     Json(req): Json<ChatRequest>,
 ) -> Result<Json<ChatResponse>, (StatusCode, String)> {
+    let sanitized_input = sanitize_input(&req.input)?;
+
+    if sanitized_input.len() > 4096 {
+        return Err((StatusCode::BAD_REQUEST, "Input too long".into()));
+    }
+
     let agent_arc = {
         let agents = state.agents.read().await;
         agents
@@ -133,7 +288,7 @@ async fn chat(
 
     let mut agent = agent_arc.write().await;
     let output = agent
-        .run(&req.input)
+        .run(&sanitized_input)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -300,14 +455,22 @@ async fn handle_socket(
 fn router(state: Arc<AppState>, static_dir: PathBuf) -> Router {
     let static_service = ServeDir::new(&static_dir);
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
     Router::new()
         .route("/health", get(health_check))
+        .route("/config", get(get_config))
+        .route("/tools", get(get_tools))
         .route("/sessions", post(create_session))
         .route("/sessions", get(list_sessions))
         .route("/sessions/:session_id", delete(delete_session))
         .route("/sessions/:session_id/chat", post(chat))
         .route("/ws", get(websocket_handler))
         .nest_service("/", static_service)
+        .layer(cors)
         .with_state(state)
 }
 
