@@ -159,8 +159,15 @@ async fn delete_session(
 }
 
 async fn websocket_handler(
-    ws: WebSocket,
+    ws: WebSocketUpgrade,
     State(state): State<Arc<AppState>>,
+) -> impl axum::response::IntoResponse {
+    ws.on_upgrade(|socket| handle_socket(socket, state))
+}
+
+async fn handle_socket(
+    ws: WebSocket,
+    state: Arc<AppState>,
 ) {
     let (mut sender, mut receiver) = ws.split();
     let mut current_session_id: Option<String> = None;
@@ -181,7 +188,7 @@ async fn websocket_handler(
                                     config.llm.model.clone(),
                                 );
 
-                                let mut context =
+                                let context =
                                     AgentContext::new().with_session_id(session_id.clone());
 
                                 let mut agent = Agent::new(config, llm).with_context(context);

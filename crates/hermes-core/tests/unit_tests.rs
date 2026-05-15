@@ -3,8 +3,10 @@
 mod tests {
     use hermes_core::agent::Agent;
     use hermes_core::config::Config;
-    use hermes_core::llm::{MockLlmClient, ChatResponse, Choice, Message, Usage};
+    use hermes_core::llm::{ChatRequest, ChatResponse, Choice, LlmClient, Message, MockLlmClient, Usage};
     use hermes_core::tool::EchoTool;
+    use hermes_core::tool::Tool;
+    use serde_json;
 
     #[tokio::test]
     async fn test_config_default() {
@@ -21,7 +23,7 @@ mod tests {
         assert_eq!(tool.description(), "Echo back the input message");
 
         let args = serde_json::json!({"message": "Hello"});
-        let result = tool.execute(args).await;
+        let result: Result<String, hermes_core::error::Error> = tool.execute(args).await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "Hello");
     }
@@ -50,7 +52,7 @@ mod tests {
         
         mock.add_response(response);
         
-        let request = hermes_core::llm::ChatRequest {
+        let request = ChatRequest {
             model: "gpt-4".into(),
             messages: vec![],
             tools: None,
@@ -58,7 +60,7 @@ mod tests {
             max_tokens: 100,
         };
         
-        let result = mock.chat(request).await;
+        let result: Result<ChatResponse, hermes_core::error::Error> = mock.chat(request).await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap().choices[0].message.content, "Test response");
     }
