@@ -5,9 +5,9 @@
 
 - **分支**: `feature/rust-rewrite-web-ui`
 - **开始日期**: 2026-05-15
-- **阶段**: Phase 1-7 基础完成
+- **阶段**: Phase 1-8 完成
 - **编译状态**: ✅ 成功编译
-- **测试状态**: ✅ 所有测试通过
+- **测试状态**: ✅ 所有测试通过 (17/17)
 
 ---
 
@@ -30,7 +30,7 @@
 - [x] 1.13 创建 Web 界面
 - [x] 1.14 创建配置文件和 README
 
-### Phase 2: 核心 Agent 引擎 ✅ 基础完成
+### Phase 2: 核心 Agent 引擎 ✅ 完成
 
 - [x] 2.1 完善上下文管理
 - [x] 2.2 实现提示词构建
@@ -54,10 +54,10 @@
 - [x] 4.3 WebSocket 集成
 - [x] 4.4 连接状态显示
 - [x] 4.5 打字指示器动画
-- [x] 4.6 实现配置界面 ✅ 新增配置管理模态框
-- [x] 4.7 实现技能管理界面 ✅ 新增工具列表展示
+- [x] 4.6 实现配置界面
+- [x] 4.7 实现技能管理界面
 
-### Phase 5: 工具生态 ✅ 核心完成
+### Phase 5: 工具生态 ✅ 完成
 
 - [x] 5.1 创建 `hermes-tools` crate
 - [x] 5.2 实现文件操作工具
@@ -73,24 +73,25 @@
 
 ### Phase 7: 测试与优化 ✅ 完成
 
-- [x] 7.1 单元测试框架 ✅ 测试通过
+- [x] 7.1 单元测试框架
 - [x] 7.2 集成测试基础
-- [x] 7.3 性能优化 ✅ 请求超时、请求体限制、响应压缩、性能统计API
-- [x] 7.4 安全审计 ✅ 输入验证、命令注入防护、CORS配置
+- [x] 7.3 性能优化 (请求超时、请求体限制、响应压缩、性能统计API)
+- [x] 7.4 安全审计 (输入验证、命令注入防护、CORS配置)
 
----
+### Phase 8: 主分支同步更新 ✅ 完成
 
-## 当前任务进度
-
-### 已完成: Phase 1-7 ✅
-
-- **Phase 1**: 基础设施搭建 ✅
-- **Phase 2**: 核心 Agent 引擎基础 ✅
-- **Phase 3**: Web 后端 ✅
-- **Phase 4**: Web 前端基础 ✅
-- **Phase 5**: 工具生态核心 ✅
-- **Phase 6**: CLI ✅
-- **Phase 7**: 单元测试 ✅ 全部通过
+- [x] 8.1 重构 agent.rs 为多模块架构
+  - [x] 新增 `message_sanitization.rs` — 消息清理与工具参数修复
+  - [x] 新增 `tool_executor.rs` — 并发/顺序工具执行引擎
+  - [x] 新增 `chat_completion_helpers.rs` — LLM API 重试与错误分类
+  - [x] 新增 `context_compressor.rs` — 上下文压缩引擎
+- [x] 8.2 新增 XSearchTool (X/Twitter 搜索工具)
+- [x] 8.3 增强 Web 工具多后端架构 (SearXNG 支持)
+- [x] 8.4 增强 ToolRegistry (override 支持 + 错误清理)
+- [x] 8.5 更新配置系统 (新增 x_search, compression 配置项)
+- [x] 8.6 更新 Stats API (新增 version, compression_enabled, x_search_enabled)
+- [x] 8.7 更新 Web UI (Feature Status 面板)
+- [x] 8.8 更新 config.toml
 
 ---
 
@@ -106,6 +107,7 @@
 - **日志**: tracing
 - **CLI**: clap
 - **WebSocket**: axum ws + futures-util
+- **并发**: futures (join_all)
 
 ### 前端
 
@@ -130,14 +132,18 @@
 │   │   ├── src/
 │   │   │   ├── lib.rs
 │   │   │   ├── agent.rs          # Agent 引擎 ✅
-│   │   │   ├── config.rs         # 配置管理 ✅
+│   │   │   ├── chat_completion_helpers.rs  # LLM API 重试 ✅ 新增
+│   │   │   ├── config.rs         # 配置管理 ✅ (新增 x_search, compression)
 │   │   │   ├── context.rs        # 上下文管理 ✅
+│   │   │   ├── context_compressor.rs  # 上下文压缩 ✅ 新增
 │   │   │   ├── error.rs          # 错误类型 ✅
 │   │   │   ├── llm.rs            # LLM 抽象 ✅
 │   │   │   ├── memory.rs         # 记忆管理 ✅
+│   │   │   ├── message_sanitization.rs  # 消息清理 ✅ 新增
 │   │   │   ├── prompt.rs         # 提示词构建 ✅
 │   │   │   ├── skill.rs          # 技能系统 ✅
-│   │   │   └── tool.rs           # 工具系统 ✅
+│   │   │   ├── tool.rs           # 工具系统 ✅ (增强: override, 错误清理)
+│   │   │   └── tool_executor.rs  # 工具执行引擎 ✅ 新增
 │   │   └── tests/
 │   │       └── unit_tests.rs     # 单元测试 ✅ 4/4 通过
 │   ├── hermes-tools/             # 工具库
@@ -146,7 +152,8 @@
 │   │   │   ├── lib.rs
 │   │   │   ├── file_tools.rs     # 文件工具 ✅
 │   │   │   ├── terminal.rs       # 终端工具 ✅
-│   │   │   └── web_tools.rs      # Web 工具 ✅
+│   │   │   ├── web_tools.rs      # Web 工具 ✅ (增强: SearXNG)
+│   │   │   └── x_search_tool.rs  # X 搜索工具 ✅ 新增
 │   │   └── tests/
 │   │       └── unit_tests.rs     # 单元测试 ✅ 4/4 通过
 │   ├── hermes-cli/               # CLI
@@ -157,7 +164,7 @@
 │       └── src/main.rs
 └── web/                           # Web 前端
     ├── index.html                # 主界面 ✅
-    └── app.js                    # 前端逻辑 ✅
+    └── app.js                    # 前端逻辑 ✅ (增强: Feature Status)
 ```
 
 ---
@@ -176,7 +183,7 @@ cargo check
 cargo test
 ```
 
-**测试结果**: ✅ 全部通过 (8/8 测试)
+**测试结果**: ✅ 全部通过 (17/17 测试)
 
 ### 运行 CLI
 
@@ -245,11 +252,6 @@ Content-Type: application/json
 GET /sessions
 ```
 
-响应：
-```json
-["session_id_1", "session_id_2", ...]
-```
-
 #### 删除会话
 ```http
 DELETE /sessions/:session_id
@@ -260,7 +262,23 @@ DELETE /sessions/:session_id
 GET /health
 ```
 
-响应：`ok`
+#### 性能统计
+```http
+GET /stats
+```
+
+响应：
+```json
+{
+  "sessions_count": 2,
+  "uptime_seconds": 3600,
+  "memory_usage_kb": 0,
+  "llm_provider": "openai",
+  "compression_enabled": true,
+  "x_search_enabled": false,
+  "version": "0.1.0"
+}
+```
 
 ### WebSocket API
 
@@ -300,7 +318,11 @@ GET /health
 
 - `http_get`: HTTP GET 请求
 - `http_post`: HTTP POST 请求
-- `web_search`: 网页搜索
+- `web_search`: 网页搜索 (支持 DuckDuckGo 和 SearXNG 后端)
+
+### X 搜索工具
+
+- `x_search`: X/Twitter 搜索 (通过 xAI API，需要 XAI_API_KEY)
 
 ---
 
@@ -308,9 +330,10 @@ GET /health
 
 | 模块 | 测试数量 | 通过 | 失败 |
 |------|---------|------|------|
-| hermes-core | 5 | ✅ 5 | 0 |
-| hermes-tools | 4 | ✅ 4 | 0 |
-| **总计** | **9** | **✅ 9** | **0** |
+| hermes-core (lib) | 9 | ✅ 9 | 0 |
+| hermes-core (tests) | 4 | ✅ 4 | 0 |
+| hermes-tools (tests) | 4 | ✅ 4 | 0 |
+| **总计** | **17** | **✅ 17** | **0** |
 
 ---
 
@@ -331,39 +354,43 @@ GET /health
 - **2026-05-15**: 实现技能管理界面 ✅ 新增 `/tools` API 和工具列表展示
 - **2026-05-15**: 安全审计和加固 ✅ 输入验证、命令注入防护、CORS配置
 - **2026-05-15**: 性能优化 ✅ 请求超时、请求体限制、响应压缩、`/stats` 性能统计API
+- **2026-05-18**: 主分支同步更新 ✅ Phase 8 完成
+  - 重构 agent.rs 为多模块架构 (message_sanitization, tool_executor, chat_completion_helpers, context_compressor)
+  - 新增 XSearchTool (X/Twitter 搜索工具)
+  - 增强 Web 工具多后端架构 (SearXNG 支持)
+  - 增强 ToolRegistry (override 支持 + 错误清理)
+  - 更新配置系统 (新增 x_search, compression 配置项)
+  - 更新 Stats API (新增 version, compression_enabled, x_search_enabled)
+  - 更新 Web UI (Feature Status 面板)
 
 ---
 
 ## 下一步计划 (可选增强)
 
-### Phase 7: 测试与优化
+### Phase 9: 高级功能
 
-1. 完善单元测试覆盖率
-2. 添加集成测试
-3. 性能基准测试
-4. 内存优化
-5. 安全审计和加固
-
-### Phase 8: 功能增强
-
-1. 实现配置管理界面
-2. 实现技能管理界面
-3. 添加用户认证
-4. 实现会话持久化
-5. 添加多语言支持
+1. 实现 MCP 客户端 (stdio + HTTP + SSE 传输)
+2. 实现浏览器工具 (Chrome DevTools Protocol)
+3. 添加流式响应处理 (SSE 解析)
+4. 实现会话持久化 (SQLite)
+5. 添加用户认证
+6. 实现斜杠命令系统 (/model, /new, /goal)
+7. 添加 i18n 多语言支持
 
 ---
 
-## 🎉 项目完成总结
+## 项目完成总结
 
 ### 当前成果
 
-✅ **全栈 Rust 实现**: 从核心库到 Web 界面完整构建  
-✅ **现代 Web 技术**: Axum + WebSocket + 静态文件服务  
-✅ **完整工具生态**: 文件、终端、Web 工具  
-✅ **用户友好界面**: 深色主题聊天界面  
-✅ **全面测试覆盖**: 9 个单元测试全部通过  
-✅ **生产级代码**: 模块化、类型安全、异步处理  
+✅ **全栈 Rust 实现**: 从核心库到 Web 界面完整构建
+✅ **现代 Web 技术**: Axum + WebSocket + 静态文件服务
+✅ **完整工具生态**: 文件、终端、Web、X 搜索工具
+✅ **用户友好界面**: 深色主题聊天界面
+✅ **全面测试覆盖**: 17 个单元测试全部通过
+✅ **生产级代码**: 模块化、类型安全、异步处理
+✅ **主分支同步**: 与 Python 版本功能对齐
+✅ **高级架构**: 多模块 Agent、并发工具执行、上下文压缩、消息清理
 
 ### 项目文件
 

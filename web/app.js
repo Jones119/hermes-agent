@@ -241,6 +241,7 @@ function renderStats(stats) {
             <div class="config-item"><div class="config-label">Uptime</div><div class="config-value">${formatSeconds(stats.uptime_seconds || 0)}</div></div>
             <div class="config-item"><div class="config-label">Memory Usage</div><div class="config-value">${stats.memory_usage_kb || 0} KB</div></div>
             <div class="config-item"><div class="config-label">LLM Provider</div><div class="config-value">${stats.llm_provider || 'N/A'}</div></div>
+            <div class="config-item"><div class="config-label">Version</div><div class="config-value">${stats.version || 'N/A'}</div></div>
         </div>
         
         <div class="config-section">
@@ -249,6 +250,12 @@ function renderStats(stats) {
             <div class="config-item"><div class="config-label">Request Timeout</div><div class="config-value">60 seconds</div></div>
             <div class="config-item"><div class="config-label">Body Size Limit</div><div class="config-value">10 MB</div></div>
             <div class="config-item"><div class="config-label">CORS Protection</div><div class="config-value">Enabled</div></div>
+        </div>
+
+        <div class="config-section">
+            <div class="config-section-title">Feature Status</div>
+            <div class="config-item"><div class="config-label">Context Compression</div><div class="config-value">${stats.compression_enabled ? 'Enabled' : 'Disabled'}</div></div>
+            <div class="config-item"><div class="config-label">X/Twitter Search</div><div class="config-value">${stats.x_search_enabled ? 'Enabled' : 'Disabled'}</div></div>
         </div>
     `;
     

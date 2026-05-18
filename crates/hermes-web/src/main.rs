@@ -235,6 +235,26 @@ async fn get_tools() -> Json<Vec<ToolResponse>> {
                 },
             ],
         },
+        ToolResponse {
+            name: "web_search".to_string(),
+            description: "Search the web (DuckDuckGo or SearXNG)".to_string(),
+            parameters: vec![
+                ToolParameterResponse {
+                    name: "query".to_string(),
+                    description: "The search query".to_string(),
+                },
+            ],
+        },
+        ToolResponse {
+            name: "x_search".to_string(),
+            description: "Search X/Twitter via xAI".to_string(),
+            parameters: vec![
+                ToolParameterResponse {
+                    name: "query".to_string(),
+                    description: "The X search query".to_string(),
+                },
+            ],
+        },
     ];
     Json(tools)
 }
@@ -245,6 +265,9 @@ struct StatsResponse {
     uptime_seconds: u64,
     memory_usage_kb: u64,
     llm_provider: String,
+    compression_enabled: bool,
+    x_search_enabled: bool,
+    version: String,
 }
 
 static START_TIME: once_cell::sync::Lazy<std::time::Instant> = once_cell::sync::Lazy::new(std::time::Instant::now);
@@ -255,6 +278,8 @@ async fn get_stats(State(state): State<Arc<AppState>>) -> Json<StatsResponse> {
     
     let config = state.config.clone();
     let llm_provider = config.llm.provider;
+    let compression_enabled = config.compression.enabled;
+    let x_search_enabled = config.x_search.enabled;
     
     let memory_usage_kb = 0;
 
@@ -263,6 +288,9 @@ async fn get_stats(State(state): State<Arc<AppState>>) -> Json<StatsResponse> {
         uptime_seconds,
         memory_usage_kb,
         llm_provider,
+        compression_enabled,
+        x_search_enabled,
+        version: env!("CARGO_PKG_VERSION").to_string(),
     })
 }
 

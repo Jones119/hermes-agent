@@ -14,6 +14,8 @@ max_iterations = 20
 max_tool_calls = 50
 timeout_secs = 600
 memory_limit = 100
+compression_enabled = true
+compression_threshold = 40
 
 [web]
 host = "127.0.0.1"
@@ -30,3 +32,17 @@ review_interval_hours = 168
 enable_approval = true
 command_whitelist = ["ls", "cd", "pwd", "cat", "echo"]
 path_whitelist = ["/workspace"]
+
+[x_search]
+enabled = false
+model = "grok-4.20-reasoning"
+timeout_seconds = 180
+retries = 2
+api_key = ""
+base_url = ""
+
+[compression]
+enabled = true
+threshold = 40
+min_messages = 10
+max_summary_tokens = 1024
